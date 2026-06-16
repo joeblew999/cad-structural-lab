@@ -1,0 +1,52 @@
+#!/usr/bin/env nu
+# WALL fit-check (structural SELECTION, not BOM) for ICF basement walls, using the
+# prescriptive code tables (HUD/PCA "Prescriptive Method for ICF", 2nd ed = the
+# basis of IRC R404). Given a wall DEMAND (core thickness, wall height, unbalanced
+# backfill height, soil class) -> the required minimum vertical reinforcement.
+#
+#   mise run fit-wall <core_in> <height_ft> <backfill_ft> [soil_pcf] [capacity_csv]
+#
+# soil_pcf = equivalent fluid density: 30 (well-drained GW/GP/SW/SP),
+# 45 (GM/GC/SM/ML), 60 (SC/MH/CL clays). Default 60 = worst case.
+#
+# Code rule: NO interpolation (footnote 4) -> demand is rounded UP to the next
+# tabulated height/backfill, and to the next-higher soil class. Table values are
+# Grade 40; with Grade 60 steel the spacing may be x1.5 (min #4 @ 48"). This is
+# SELECTION/estimating only -- final design requires a licensed PE.
+def main [
+  core_in: float
+  height_ft: float
+  backfill_ft: float
+  soil_pcf: float = 60
+  capacity_csv: string = ""
+] {
+  # data lives in the factory-customers repo (see $env.QUADLOCK_DATA)
+  let csv = (if ($capacity_csv | is-empty) { $"($env.QUADLOCK_DATA)/wall-capacity-prescriptive-icf.csv" } else { $capacity_csv })
+  if not ($csv | path exists) { print $"(ansi red)capacity table not found: ($csv) -- is factory-customers checked out as a sibling? set QUADLOCK_DATA to override(ansi reset)"; exit 2 }
+  let t = (open $csv)
+
+  # nearest tabulated wall thickness NOT greater than the actual core (conservative)
+  let thinner = ($t | get wall_thickness_in | uniq | where {|x| $x <= $core_in })
+  if ($thinner | is-empty) {
+    print $"(ansi red)core ($core_in) in is thinner than the minimum 5.5 in prescriptive basement wall -> not a prescriptive case, needs engineered design(ansi reset)"
+    exit 1
+  }
+  let use_t = ($thinner | math max)
+
+  # no interpolation: round demand UP to the tabulated envelope
+  let rows = ($t
+    | where wall_thickness_in == $use_t
+      and max_wall_height_ft >= $height_ft
+      and max_backfill_ft >= $backfill_ft
+      and soil_pcf >= $soil_pcf
+    | sort-by max_wall_height_ft max_backfill_ft soil_pcf)
+  print $"demand: ($core_in)in core / ($height_ft)ft wall / ($backfill_ft)ft backfill / ($soil_pcf) pcf soil"
+  print $"using table: ($use_t)in flat ICF basement -- Grade 40 base; Grade 60 allows spacing x1.5"
+  if ($rows | is-empty) {
+    print $"(ansi red)exceeds prescriptive limits -- height/backfill too high for ($use_t)in wall -> engineered design ACI 318 / PE required(ansi reset)"
+    exit 1
+  }
+  let r = ($rows | first)
+  print $"envelope used: <=($r.max_wall_height_ft)ft height, <=($r.max_backfill_ft)ft backfill, ($r.soil_pcf) pcf"
+  print $"required min vertical reinforcement \(pick one bar size\): (ansi green_bold)($r.rebar_options)(ansi reset)"
+}

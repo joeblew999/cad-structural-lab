@@ -8,6 +8,11 @@
 [tools]
 
 [env]
+# ALL structural DATA lives in the factory-customers repo. cad-structural-lab is
+# just the research/tooling that consumes it. Default = sibling checkout; override
+# QUADLOCK_DATA to point elsewhere.
+QUADLOCK_DATA = "{{config_root}}/../factory-customers/customers/quadlock/catalogue"
+
 # Hint for the gemlab/pmsim probes which need C/Fortran system libs.
 # macOS: brew install suite-sparse openblas lapack
 # Linux: apt-get install libsuitesparse-dev libopenblas-dev liblapack-dev

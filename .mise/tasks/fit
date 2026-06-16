@@ -1,0 +1,50 @@
+#!/usr/bin/env nu
+# FIT-CHECK (structural SELECTION, not BOM): given a structural DEMAND
+# (clear span + live load), list the capacity-table configs whose CAPACITY
+# covers it. Reads a capacity CSV (Quad-Deck or any product with the same schema:
+# panel_in, slab_in, live_load_psf, max_span_ft, rebar_bottom, rebar_top).
+#
+#   mise run fit <span_ft> <live_psf> [capacity_csv]
+#
+# Data lives in the factory-customers repo (see $env.QUADLOCK_DATA); pass a path to override.
+#
+# This is the SELECTION step only. It does NOT compute the demand (that is the
+# structural-mechanics / load-takedown job) and it does NOT produce a BOM.
+# Estimating only — final design requires a licensed PE (Quad-Lock sign waiver).
+def main [
+  span_ft: float
+  live_psf: float
+  capacity_csv: string = ""
+] {
+  let csv = (if ($capacity_csv | is-empty) { $"($env.QUADLOCK_DATA)/quad-deck-spans.csv" } else { $capacity_csv })
+  if not ($csv | path exists) {
+    print $"(ansi red)capacity table not found: ($csv) -- is factory-customers a sibling checkout? set QUADLOCK_DATA to override(ansi reset)"
+    exit 2
+  }
+  let table = (open $csv)
+
+  # pick the smallest tabulated live-load tier that still envelopes the demand
+  let tiers = ($table | get live_load_psf | uniq | where {|t| $t >= $live_psf } | sort)
+  if ($tiers | is-empty) {
+    let max_tier = ($table | get live_load_psf | math max)
+    print $"(ansi red)demand live load ($live_psf) psf exceeds tabulated max ($max_tier) psf — needs garage/green-roof tables or PE design(ansi reset)"
+    exit 1
+  }
+  let tier = ($tiers | first)
+
+  let viable = ($table
+    | where live_load_psf == $tier and max_span_ft >= $span_ft
+    | insert margin_ft {|r| ($r.max_span_ft - $span_ft) }
+    | sort-by panel_in slab_in
+    | select panel_in slab_in max_span_ft margin_ft rebar_bottom rebar_top)
+
+  print $"demand: span ($span_ft) ft @ ($live_psf) psf live  ->  fit-checked at ($tier) psf tier"
+  print $"source: ($csv)"
+  if ($viable | is-empty) {
+    print $"(ansi red)NO Quad-Deck config fits this span — needs a beam, intermediate support, or non-standard design(ansi reset)"
+    exit 1
+  }
+  let best = ($viable | first)
+  print $"lightest fit: ($best.panel_in)\" panel / ($best.slab_in)\" slab  \(margin ($best.margin_ft) ft\)"
+  print ($viable | table)
+}

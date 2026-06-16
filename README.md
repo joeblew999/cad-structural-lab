@@ -27,7 +27,21 @@ mise run probe faer         # run one probe against the real crate source
 mise run probe-all          # run all pure-Rust probes (no system libs)
 mise run probe gemlab       # needs C libs (see below)
 mise run src-get gemlab     # vendor upstream source into .src/ for inspection
+mise run fit 18 40          # Quad-Deck FLOOR fit-check: span 18 ft @ 40 psf -> viable configs
+mise run fit-wall 6 8 6 30  # ICF WALL fit-check: 6" core, 8ft, 6ft backfill, 30pcf -> rebar
 ```
+
+`fit` (floors) and `fit-wall` (walls) are the structural **selection** step
+(capacity ≥ demand), kept separate from BOM. Floors use Quad-Lock's proprietary span
+tables; walls use prescriptive **code** tables (HUD/IRC). See
+[notes/quaddeck-fit.md](notes/quaddeck-fit.md) and [notes/wall-capacity.md](notes/wall-capacity.md).
+
+**All DATA lives in the `factory-customers` repo** — this repo is just the research /
+tooling that consumes it (tasks find it via `$env.QUADLOCK_DATA`, default = sibling
+checkout). Provenance + legal status of every dataset is in
+`factory-customers/customers/quadlock/catalogue/code-tables-SOURCES.md` (and the
+`*-README.md` files there); the `code` column in each CSV is the provenance key. All
+datasets are **estimating/selection only — final design requires a licensed PE.**
 
 `probe`/`probe-all` use `cargo run`, which pulls each crate's source from
 crates.io (or a git dep) and runs our checks against it — "pull the source, run
@@ -57,7 +71,9 @@ our code against it."
   scaffolding, not hard math**: distributed loads, 3D frames, code-based load
   combinations (ASCE 7 / Eurocode), member capacity/drift checks.
 
-See [notes/findings.md](notes/findings.md) for the full analysis.
+See [notes/findings.md](notes/findings.md) for the full analysis, and
+[notes/ifc-bridge.md](notes/ifc-bridge.md) for the IFC → structural bridge design
++ test plan (realistic if scoped to IFC that carries `IfcStructuralAnalysisModel`).
 
 ## System libs (gemlab / pmsim only)
 

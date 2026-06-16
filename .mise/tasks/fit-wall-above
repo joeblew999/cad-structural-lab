@@ -1,0 +1,50 @@
+#!/usr/bin/env nu
+# ABOVE-GRADE wall fit-check (wind-driven), structural SELECTION not BOM.
+# Two-step prescriptive lookup, HUD/PCA "Prescriptive Method for ICF" 2nd ed
+# (basis of IRC R608):
+#   1) wind speed x exposure x enclosure -> design wind pressure (Table 4.1)
+#   2) pressure x wall height x support x thickness -> min vertical reinf (Table 4.2)
+#
+#   mise run fit-wall-above <core_in> <height_ft> <wind_mph> <exposure> [enclosure] [support] [--country us]
+#
+# exposure: B | C | D       enclosure: enclosed | partially_enclosed  (default enclosed)
+# support:  roof_or_nonbearing | lf2_and_roof | icf2_and_lfroof        (default lf2_and_roof)
+# NO interpolation -> wind speed, height, pressure rounded UP. DESIGN_REQUIRED =
+# beyond prescriptive -> engineered. Estimating only; final design needs a PE.
+def main [
+  core_in: float
+  height_ft: float
+  wind_mph: float
+  exposure: string
+  enclosure: string = "enclosed"
+  support: string = "lf2_and_roof"
+  --country (-c): string = "us"
+] {
+  let base = $"($env.QUADLOCK_DATA)/($country)"
+  let wind_csv = $"($base)-wall-wind-pressure-icf.csv"
+  let cap_csv = $"($base)-wall-capacity-prescriptive-icf-abovegrade.csv"
+  if not ($wind_csv | path exists) { print $"(ansi red)no wind table for country '($country)' -- engineered design required(ansi reset)"; exit 2 }
+
+  # step 1: design wind pressure (round wind speed UP, no interpolation)
+  let wrows = (open $wind_csv | where enclosure == $enclosure and exposure == $exposure and wind_speed_mph >= $wind_mph | sort-by wind_speed_mph)
+  if ($wrows | is-empty) { print $"(ansi red)wind speed ($wind_mph) mph exceeds the ($enclosure)/($exposure) wind table(ansi reset)"; exit 1 }
+  let pressure = ($wrows | first | get design_wind_pressure_psf)
+
+  # step 2: reinforcement (nearest thickness <= core; round height + pressure UP; match support)
+  let t = (open $cap_csv)
+  let thinner = ($t | get wall_thickness_in | uniq | where {|x| $x <= $core_in })
+  if ($thinner | is-empty) { print $"(ansi red)core ($core_in)in is below the minimum 3.5in above-grade table thickness(ansi reset)"; exit 1 }
+  let use_t = ($thinner | math max)
+  let rows = ($t | where wall_thickness_in == $use_t and support_condition == $support and max_wall_height_ft >= $height_ft and design_wind_pressure_psf >= $pressure | sort-by design_wind_pressure_psf max_wall_height_ft)
+
+  print $"demand: ($core_in)in core / ($height_ft)ft / ($wind_mph)mph ($exposure)/($enclosure) / support=($support)"
+  print $"design wind pressure: ($pressure) psf  ->  using ($use_t)in above-grade table"
+  if ($rows | is-empty) { print $"(ansi red)wind pressure/height beyond the prescriptive table -> engineered design / PE required(ansi reset)"; exit 1 }
+  let r = ($rows | first)
+  if ($r.rebar_options == "DESIGN_REQUIRED") {
+    print $"(ansi red)DESIGN_REQUIRED at ($pressure)psf / ($r.max_wall_height_ft)ft / ($use_t)in -> engineered design / PE required(ansi reset)"
+    exit 1
+  }
+  print $"envelope: <=($r.design_wind_pressure_psf)psf, <=($r.max_wall_height_ft)ft"
+  print $"required min vertical reinforcement \(pick one bar size; Grade 40 base, Grade 60 -> spacing x1.5-1.6\): (ansi green_bold)($r.rebar_options)(ansi reset)"
+}

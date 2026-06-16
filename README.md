@@ -28,7 +28,8 @@ mise run probe-all          # run all pure-Rust probes (no system libs)
 mise run probe gemlab       # needs C libs (see below)
 mise run src-get gemlab     # vendor upstream source into .src/ for inspection
 mise run fit 18 40          # Quad-Deck FLOOR fit-check: span 18 ft @ 40 psf -> viable configs
-mise run fit-wall 6 8 6 30  # ICF WALL fit-check: 6" core, 8ft, 6ft backfill, 30pcf -> rebar
+mise run fit-wall 6 8 6 30          # ICF basement wall: 6" core, 8ft, 6ft backfill, 30pcf -> rebar
+mise run fit-wall-above 6 8 110 C   # ICF above-grade wall: 6" core, 8ft, 110mph, exposure C -> rebar
 ```
 
 `fit` (floors) and `fit-wall` (walls) are the structural **selection** step

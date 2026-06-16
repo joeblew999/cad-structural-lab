@@ -4,10 +4,13 @@
 # basis of IRC R404). Given a wall DEMAND (core thickness, wall height, unbalanced
 # backfill height, soil class) -> the required minimum vertical reinforcement.
 #
-#   mise run fit-wall <core_in> <height_ft> <backfill_ft> [soil_pcf] [capacity_csv]
+#   mise run fit-wall <core_in> <height_ft> <backfill_ft> [soil_pcf] [--country us]
 #
 # soil_pcf = equivalent fluid density: 30 (well-drained GW/GP/SW/SP),
 # 45 (GM/GC/SM/ML), 60 (SC/MH/CL clays). Default 60 = worst case.
+# --country selects the jurisdiction's table (default us). Other countries get
+# their own {country}-wall-capacity-prescriptive-icf.csv in factory-customers;
+# jurisdictions without prescriptive ICF tables (NZ/AU/EU) -> engineered only.
 #
 # Code rule: NO interpolation (footnote 4) -> demand is rounded UP to the next
 # tabulated height/backfill, and to the next-higher soil class. Table values are
@@ -18,11 +21,11 @@ def main [
   height_ft: float
   backfill_ft: float
   soil_pcf: float = 60
-  capacity_csv: string = ""
+  --country (-c): string = "us"
 ] {
   # data lives in the factory-customers repo (see $env.QUADLOCK_DATA)
-  let csv = (if ($capacity_csv | is-empty) { $"($env.QUADLOCK_DATA)/wall-capacity-prescriptive-icf.csv" } else { $capacity_csv })
-  if not ($csv | path exists) { print $"(ansi red)capacity table not found: ($csv) -- is factory-customers checked out as a sibling? set QUADLOCK_DATA to override(ansi reset)"; exit 2 }
+  let csv = $"($env.QUADLOCK_DATA)/($country)-wall-capacity-prescriptive-icf.csv"
+  if not ($csv | path exists) { print $"(ansi red)no prescriptive basement table for country '($country)' at ($csv) -- engineered design required, or check QUADLOCK_DATA(ansi reset)"; exit 2 }
   let t = (open $csv)
 
   # nearest tabulated wall thickness NOT greater than the actual core (conservative)

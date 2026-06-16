@@ -7,11 +7,17 @@ path; engineered (ACI 318 calc) is a separate future path for out-of-limit walls
 ## Source & data location
 
 All DATA lives in the **`factory-customers`** repo (this `cad-structural-lab` repo is
-just the tooling). The wall code tables are at
-`factory-customers/customers/quadlock/catalogue/`:
-`wall-capacity-prescriptive-icf.csv` (basement), `-abovegrade.csv`, `wall-wind-pressure-icf.csv`.
-The tooling finds them via `$env.QUADLOCK_DATA` (set in `mise.toml`, defaults to the
-sibling checkout).
+just the tooling). Wall code tables are at `factory-customers/customers/quadlock/catalogue/`,
+**country-prefixed** (codes are jurisdiction-specific; more countries will be added):
+`us-wall-capacity-prescriptive-icf.csv` (basement), `us-…-abovegrade.csv`,
+`us-wall-wind-pressure-icf.csv`. The tooling finds them via `$env.QUADLOCK_DATA`
+(set in `mise.toml`, defaults to the sibling checkout); `fit-wall*` take `--country`
+(default `us`).
+
+Two wall tasks:
+- `mise run fit-wall <core> <h> <backfill> [soil_pcf] [-c us]` — basement (backfill-driven).
+- `mise run fit-wall-above <core> <h> <wind_mph> <exposure> [enclosure] [support] [-c us]`
+  — above-grade (wind-driven, two-step: wind→pressure→rebar).
 
 Transcribed from the **HUD/PCA/NAHB "Prescriptive Method for Insulating Concrete Forms
 in Residential Construction, Second Edition"** (public domain) — the document IRC R404

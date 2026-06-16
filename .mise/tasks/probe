@@ -1,0 +1,15 @@
+#!/usr/bin/env nu
+# Run one probe harness against the real crate source: `mise run probe <name>`.
+# cargo pulls the published source from crates.io (or a git dep) and runs our
+# known-answer checks against it.
+def main [name: string] {
+  let dir = $"harness/($name)"
+  if not ($dir | path exists) {
+    print $"(ansi red)unknown probe: ($name)(ansi reset)"
+    print "available probes:"
+    ls harness | get name | path basename | each {|n| print $"  ($n)" }
+    exit 2
+  }
+  print $"== probe ($name) =="
+  cargo run --release --manifest-path $"($dir)/Cargo.toml"
+}

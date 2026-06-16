@@ -1,0 +1,12 @@
+[package]
+name = "probe-gemlab"
+version = "0.0.0"
+edition = "2021"
+
+# NB: gemlab pulls russell -> needs C/Fortran system libs.
+# macOS:  brew install suite-sparse openblas lapack
+# Linux:  apt-get install libsuitesparse-dev libopenblas-dev liblapack-dev
+# Not WASM-capable. Runs in a Linux container or a lib-provisioned host.
+[dependencies]
+gemlab = "2.2"
+faer = { version = "0.24", default-features = false, features = ["std", "linalg"] }

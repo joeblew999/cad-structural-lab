@@ -1,0 +1,5 @@
+#!/usr/bin/env nu
+# Show the validated crate catalog as a table.
+open catalog.jsonl --raw | from json --objects
+  | select name status validated wasm_ok role
+  | sort-by status name

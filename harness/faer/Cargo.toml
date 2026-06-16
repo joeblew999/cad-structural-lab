@@ -1,0 +1,9 @@
+[package]
+name = "probe-faer"
+version = "0.0.0"
+edition = "2021"
+
+# WASM-safe feature set: default `rayon` pulls atomic-wait which has no wasm32
+# impl, so disable defaults and keep only dense linalg.
+[dependencies]
+faer = { version = "0.24", default-features = false, features = ["std", "linalg"] }

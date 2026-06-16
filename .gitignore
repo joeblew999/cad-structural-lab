@@ -1,0 +1,7 @@
+# vendored upstream sources (pull with `mise run src-get <name>`)
+.src/
+
+# rust build artifacts
+target/
+**/target/
+Cargo.lock

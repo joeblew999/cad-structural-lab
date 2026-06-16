@@ -1,0 +1,25 @@
+#!/usr/bin/env nu
+# Vendor a catalogued crate's upstream source into .src/<name> (the .src/ overlay
+# convention from graphite-overlay / ifc-ubuntu). Use to read/hack/inspect or for
+# crates not on crates.io. `mise run src-get <name>`.
+def main [name: string] {
+  let matches = (open catalog.jsonl --raw | from json --objects | where name == $name)
+  if ($matches | is-empty) {
+    print $"(ansi red)not in catalog: ($name)(ansi reset)"
+    exit 2
+  }
+  let url = ($matches | first | get source)
+  if not ($url | str starts-with "http") {
+    print $"no cloneable upstream for ($name): ($url)"
+    exit 0
+  }
+  mkdir .src
+  let dest = $".src/($name)"
+  if ($dest | path exists) {
+    print $"updating ($dest)"
+    git -C $dest pull --ff-only
+  } else {
+    print $"cloning ($url) -> ($dest)"
+    git clone --depth 1 $url $dest
+  }
+}

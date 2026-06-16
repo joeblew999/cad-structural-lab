@@ -1,0 +1,18 @@
+# cad-structural-lab — validated catalog of Rust structural-mechanics tooling
+# for CAD/IFC models. Tasks live as nushell file-tasks under .mise/tasks/.
+#
+# Ubiquitous tools (nushell, gh, jq, git-cliff, ...) come from the GLOBAL
+# ~/.config/mise SSOT — nothing ubiquitous is pinned here. Rust via rustup.
+# [tools] holds repo-specific pins only (none needed yet).
+
+[tools]
+
+[env]
+# Hint for the gemlab/pmsim probes which need C/Fortran system libs.
+# macOS: brew install suite-sparse openblas lapack
+# Linux: apt-get install libsuitesparse-dev libopenblas-dev liblapack-dev
+
+[tasks.list]
+description = "List available probe harnesses"
+shell = "nu -c"
+run = "ls harness | get name | path basename"

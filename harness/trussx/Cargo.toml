@@ -1,0 +1,7 @@
+[package]
+name = "probe-trussx"
+version = "0.0.0"
+edition = "2021"
+
+[dependencies]
+trussx = "0.2"

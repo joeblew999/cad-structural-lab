@@ -1,0 +1,13 @@
+#!/usr/bin/env nu
+# Run every pure-Rust probe (no system libs). gemlab needs C libs -> `mise run probe gemlab`.
+let pure = [faer trussx frame-on-faer]
+mut results = []
+for name in $pure {
+  print $"== ($name) =="
+  let r = (cargo run --release --manifest-path $"harness/($name)/Cargo.toml" | complete)
+  print $r.stdout
+  $results = ($results | append { probe: $name, pass: ($r.exit_code == 0) })
+}
+print "── summary ──────────────────────────"
+print ($results | table)
+if ($results | any {|r| not $r.pass }) { exit 1 }

@@ -1,0 +1,8 @@
+[package]
+name = "probe-frame-on-faer"
+version = "0.0.0"
+edition = "2021"
+
+# Our own 2D frame solver built on faer (WASM-safe feature set).
+[dependencies]
+faer = { version = "0.24", default-features = false, features = ["std", "linalg"] }

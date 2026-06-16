@@ -11,12 +11,18 @@ Eurocode calc engine). So "going global" splits cleanly into two tiers.
 - Basement vertical reinforcement — flat ICF 5.5/7.5/9.5″ (Tables 3.4/3.5/3.6). Validated.
 - Above-grade vertical reinforcement — flat ICF, wind-driven (Tables 4.1 + 4.2).
 
-**Completeness backlog** (same public-domain HUD source, flat ICF, quick adds):
-- Table 3.1 footings · 3.2 crawlspace walls · 3.3 horizontal basement reinf · 5.x lintels.
-- N/A to Quad-Lock: waffle-grid / screen-grid tables (3.7–3.9, 4.3–4.4) — Quad-Lock is a
-  **flat** ICF system, so those never apply.
+**Foundation backlog — DONE** (flat ICF, same public-domain HUD source):
+- Table 3.1 footings (`us-wall-footings-icf.csv`) · 3.2 crawlspace
+  (`us-wall-crawlspace-prescriptive-icf.csv`) · 3.3 horizontal basement
+  (`us-wall-horizontal-basement-icf.csv`).
 
-US is usable now for the load-bearing cases; the backlog rounds it out.
+**US remaining = Section 5 (ICF Wall Opening Requirements)** — a distinct, larger
+sub-system: solid-wall-length **bracing** tables (flat = 5.2 series) + **lintel** tables
+(flat = 5.6/5.7/5.8). To be transcribed carefully when needed.
+- N/A to Quad-Lock: waffle/screen-grid tables (3.7–3.9, 4.3–4.4, 5.3/5.4/5.9) — Quad-Lock
+  is a **flat** ICF system, so those never apply.
+
+US is complete for foundation + reinforcement; only the openings sub-system remains.
 
 ## Feasibility of other jurisdictions
 

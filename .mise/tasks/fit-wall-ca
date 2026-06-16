@@ -1,0 +1,36 @@
+#!/usr/bin/env nu
+# CANADA ICF basement wall fit-check (NBC / BCBC, Article 9.15.4.5). Structural
+# SELECTION not BOM. The Canadian prescriptive table has a DIFFERENT structure from
+# the US (metric; keyed on backfill ground height x max unsupported wall height x
+# wall thickness; no soil-class dimension), so it is a separate task.
+#
+#   mise run fit-wall-ca <core_in> <ground_height_m> <unsupported_height_m>
+#
+# ground_height_m = max height of finished ground above basement floor (backfill).
+# unsupported_height_m = max unsupported wall height (2.44 / 2.75 / 3.0 tabulated).
+# NO interpolation -> demand rounded UP. NONE = no reinf required; NOT_PERMITTED =
+# combination not allowed -> thicker wall or engineered design. Estimating only; PE required.
+def main [
+  core_in: float
+  ground_height_m: float
+  unsupported_height_m: float
+] {
+  let csv = $"($env.QUADLOCK_DATA)/ca-wall-capacity-prescriptive-icf.csv"
+  if not ($csv | path exists) { print $"(ansi red)Canada table not found: ($csv)(ansi reset)"; exit 2 }
+  let t = (open $csv)
+  let core_mm = ($core_in * 25.4)
+  let thinner = ($t | get wall_thickness_mm | uniq | where {|x| $x <= $core_mm })
+  if ($thinner | is-empty) { print $"(ansi red)core ($core_in)in = ($core_mm | math round)mm is below the min 140mm NBC ICF foundation wall(ansi reset)"; exit 1 }
+  let use_t = ($thinner | math max)
+  let rows = ($t
+    | where wall_thickness_mm == $use_t and max_ground_height_m >= $ground_height_m and max_unsupported_height_m >= $unsupported_height_m
+    | sort-by max_ground_height_m max_unsupported_height_m)
+  print $"demand: ($core_in)in core = ($core_mm | math round)mm / ($ground_height_m)m backfill / ($unsupported_height_m)m unsupported"
+  print $"using NBC table: ($use_t)mm flat ICF basement"
+  if ($rows | is-empty) { print $"(ansi red)beyond the NBC prescriptive table -> thicker wall or engineered design / PE required(ansi reset)"; exit 1 }
+  let r = ($rows | first)
+  print $"envelope: <=($r.max_ground_height_m)m ground, <=($r.max_unsupported_height_m)m unsupported"
+  if ($r.rebar == "NONE") { print $"(ansi green_bold)no vertical reinforcement required(ansi reset) \(plus horizontal: 10M <=300mm from top + 10M @ 600mm o.c.\)"; exit 0 }
+  if ($r.rebar == "NOT_PERMITTED") { print $"(ansi red)NOT PERMITTED at this height/backfill for ($use_t)mm -> thicker wall or engineered(ansi reset)"; exit 1 }
+  print $"required vertical reinforcement: (ansi green_bold)($r.rebar)(ansi reset) \(plus horizontal: 10M <=300mm from top + 10M @ 600mm o.c.\)"
+}

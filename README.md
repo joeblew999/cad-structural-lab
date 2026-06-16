@@ -41,8 +41,10 @@ tables; walls use prescriptive **code** tables (HUD/IRC). See
 tooling that consumes it (tasks find it via `$env.QUADLOCK_DATA`, default = sibling
 checkout). Provenance + legal status of every dataset is in
 `factory-customers/customers/quadlock/catalogue/code-tables-SOURCES.md` (and the
-`*-README.md` files there); the `code` column in each CSV is the provenance key. All
-datasets are **estimating/selection only — final design requires a licensed PE.**
+`*-README.md` files there); the `code` column in each CSV is the provenance key. The
+jurisdiction roadmap (which countries are feasible, what's done) lives there too:
+`factory-customers/.../catalogue/jurisdictions.md`. All datasets are
+**estimating/selection only — final design requires a licensed PE.**
 
 `probe`/`probe-all` use `cargo run`, which pulls each crate's source from
 crates.io (or a git dep) and runs our checks against it — "pull the source, run

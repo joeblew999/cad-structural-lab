@@ -12,6 +12,7 @@
 # just the research/tooling that consumes it. Default = sibling checkout; override
 # QUADLOCK_DATA to point elsewhere.
 QUADLOCK_DATA = "{{config_root}}/../factory-customers/customers/quadlock/catalogue"
+PRIN_DATA = "{{config_root}}/../factory-customers/customers/prin/catalogue"
 
 # Hint for the gemlab/pmsim probes which need C/Fortran system libs.
 # macOS: brew install suite-sparse openblas lapack

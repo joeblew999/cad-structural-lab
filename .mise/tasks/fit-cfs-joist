@@ -1,0 +1,46 @@
+#!/usr/bin/env nu
+# Cold-formed steel FLOOR JOIST selection (AISI S230 Table D3-1). Structural SELECTION
+# not BOM. Given a required clear span + live load + joist spacing, list the CFS joist
+# designations whose max clear span covers it, lightest first.
+#
+#   mise run fit-cfs-joist <span_ft> [live_psf] [spacing_in]
+#
+# live_psf: 30 or 40 (default 40). spacing_in: 12 / 16 / 19.2 / 24 (default 16).
+# Source: AISI S230-19 (c) AISI - free download, REDISTRIBUTION PROHIBITED. Estimating /
+# selection only; final design by a licensed engineer.
+
+def ftin [s: string] {
+  let p = ($s | split row "-")
+  ($p | get 0 | into float) + (($p | get 1 | into float) / 12)
+}
+
+def main [
+  span_ft: float
+  live_psf: float = 40
+  spacing_in: float = 16
+] {
+  let csv = $"($env.PRIN_DATA)/us-cfs-floor-joists.csv"
+  if not ($csv | path exists) { print $"(ansi red)data not found: ($csv) - is factory-customers a sibling checkout?(ansi reset)"; exit 2 }
+  let t = (open $csv)
+
+  let tiers = ($t | get live_load_psf | uniq | where {|x| $x >= $live_psf } | sort)
+  if ($tiers | is-empty) { print $"(ansi red)live load ($live_psf) psf exceeds the table (max 40)(ansi reset)"; exit 1 }
+  let tier = ($tiers | first)
+  let spacings = ($t | get spacing_in | uniq | sort)
+  if not ($spacing_in in $spacings) { print $"(ansi red)spacing ($spacing_in) not tabulated - use one of: ($spacings | str join ', ')(ansi reset)"; exit 1 }
+
+  let viable = ($t
+    | where live_load_psf == $tier and spacing_in == $spacing_in
+    | insert span_ft {|r| (ftin $r.max_clear_span_ftin) }
+    | where span_ft >= $span_ft
+    | insert depth {|r| ($r.joist_designation | split row "S" | get 0 | into int) }
+    | insert mil {|r| ($r.joist_designation | split row "-" | last | into int) }
+    | sort-by depth mil
+    | select joist_designation max_clear_span_ftin span_ft)
+
+  print $"demand: ($span_ft) ft clear span @ ($live_psf) psf live, ($spacing_in)in o.c.  ->  using ($tier) psf tier"
+  if ($viable | is-empty) { print $"(ansi red)NO single-span joist fits - reduce spacing, add intermediate support, or engineered design(ansi reset)"; exit 1 }
+  let best = ($viable | first)
+  print $"lightest fit: (ansi green_bold)($best.joist_designation)(ansi reset)  \(max span ($best.max_clear_span_ftin)\)"
+  print ($viable | select joist_designation max_clear_span_ftin | first 6 | table)
+}

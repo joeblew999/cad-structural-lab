@@ -8,10 +8,11 @@
 [tools]
 
 [env]
-# ALL structural DATA lives in the factory-customers repo. cad-structural-lab is
-# just the research/tooling that consumes it. Default = sibling checkout; override
-# QUADLOCK_DATA to point elsewhere.
-QUADLOCK_DATA = "{{config_root}}/../factory-customers/customers/quadlock/catalogue"
+# Structural DATA lives in the customer repos; cad-structural-lab is just the
+# research/tooling that consumes it. Defaults = sibling checkouts; override to point
+# elsewhere. Quad-Lock moved to its own repo (factory-customer-quadlock); Prin stays
+# in factory-customers.
+QUADLOCK_DATA = "{{config_root}}/../factory-customer-quadlock/catalogue"
 PRIN_DATA = "{{config_root}}/../factory-customers/customers/prin/catalogue"
 
 # Hint for the gemlab/pmsim probes which need C/Fortran system libs.
